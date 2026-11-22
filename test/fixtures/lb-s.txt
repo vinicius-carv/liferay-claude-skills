@@ -1,0 +1,6 @@
+START LEVEL 20
+   ID|State      |Level|Symbolic name
+    0|Active     |    0|org.eclipse.osgi(3.13.0.v20180226-1711)
+  511|Active     |   15|com.acme.good.api (1.0.0)
+ 1234|Installed  |   15|com.acme.broken.api(1.0.0)
+g! 
