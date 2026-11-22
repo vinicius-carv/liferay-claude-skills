@@ -59,7 +59,7 @@ const stripIac = (b) => { const o = []; for (let i = 0; i < b.length; i++) { if 
 const FORBIDDEN = new Set(['exit', 'shutdown', 'stop', 'uninstall', 'update']);
 
 export function gogo(commands, { host = 'localhost', port = 11311, timeoutMs = 15000 } = {}) {
-  const bad = commands.find((c) => FORBIDDEN.has(c.trim().split(/\s+/)[0]));
+  const bad = commands.find((c) => FORBIDDEN.has(c.trim().split(/\s+/)[0].toLowerCase().replace(/^.*:/, '')));
   if (bad) return Promise.reject(new Error(`refusing to send destructive Gogo command: ${bad}`));
   return new Promise((resolve, reject) => {
     const sock = net.connect({ host, port });
@@ -88,7 +88,7 @@ async function main() {
   const dir = args.find((a, i) => !a.startsWith('--') && !args[i - 1]?.startsWith('--')) ?? '.';
   const { names, fragments, unchecked } = workspaceBundles(dir);
   if (!names.length) {
-    console.error('no module jars found under modules/**/build/libs — run a build first');
+    console.error('no module jars found under modules/**/build/libs - run a build first');
     process.exit(1);
   }
   const conn = { host: opt('--host', 'localhost'), port: +opt('--port', 11311) };

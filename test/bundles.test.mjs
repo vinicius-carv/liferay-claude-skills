@@ -101,6 +101,6 @@ test('workspaceBundles: jar without manifest does not reuse previous name; skips
 });
 
 test('gogo refuses dangerous commands before connecting', async () => {
-  for (const c of ['exit', 'shutdown 0', 'stop 5', 'uninstall 5', 'update 5'])
+  for (const c of ['felix:stop 5', 'system:exit', 'EXIT', 'exit', 'shutdown 0', 'stop 5', 'uninstall 5', 'update 5'])
     await assert.rejects(gogo([c], { port: 1 }), /refus/i);
 });
