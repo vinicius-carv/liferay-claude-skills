@@ -59,3 +59,23 @@ test('network: real release + sources jar', { skip: process.env.LIFERAY_NET_TEST
   const dir = await fetchSources(kernel, { cacheDir });
   assert.ok(existsSync(join(dir, 'com', 'liferay', 'portal', 'kernel', 'model', 'User.java')));
 });
+
+test('parseBom keeps ids ending in s and trims whitespace/newlines', () => {
+  const xml = `<dependency><groupId>com.liferay</groupId><artifactId>
+      com.liferay.foo.options </artifactId><version>
+  1.0.0
+</version></dependency>`;
+  assert.deepEqual(parseBom(xml), [{ groupId: 'com.liferay', artifactId: 'com.liferay.foo.options', version: '1.0.0' }]);
+  assert.ok(parseBom(fx('bom-sample.pom')).some((a) => a.artifactId === 'com.liferay.journal.service'));
+});
+
+test('fetchSources removes the jar after extraction, also on failure', async () => {
+  const cacheDir = mkdtempSync(join(tmpdir(), 'lfr-jar-'));
+  const fetchImpl = async () => ({ ok: true, status: 200, arrayBuffer: async () => new Uint8Array([1]).buffer });
+  const jar = join(cacheDir, 'com.liferay.journal.service-7.0.193-sources.jar');
+  await fetchSources(journal, { cacheDir, fetchImpl, extract: () => {} });
+  assert.ok(!existsSync(jar));
+  const bad = { ...journal, version: '9.9.9' };
+  await assert.rejects(fetchSources(bad, { cacheDir, fetchImpl, extract: () => { throw new Error('boom'); } }), /boom/);
+  assert.ok(!existsSync(join(cacheDir, 'com.liferay.journal.service-9.9.9-sources.jar')));
+});

@@ -23,7 +23,7 @@ export function resolveRelease(releases, productKey) {
 export const bomUrl = (product, tpv) => `${NEXUS}/com/liferay/portal/release.${product}.bom/${tpv}/release.${product}.bom-${tpv}.pom`;
 
 export function parseBom(xml) {
-  const tag = (s, t) => new RegExp(`<${t}>\s*([^<]*?)\s*</${t}>`).exec(s)?.[1];
+  const tag = (s, t) => new RegExp(`<${t}>\\s*([^<]*?)\\s*</${t}>`).exec(s)?.[1];
   return [...xml.matchAll(/<dependency>([\s\S]*?)<\/dependency>/g)]
     .map(([, d]) => ({ groupId: tag(d, 'groupId'), artifactId: tag(d, 'artifactId'), version: tag(d, 'version') }))
     .filter((a) => a.groupId && a.artifactId && a.version);
@@ -49,6 +49,8 @@ export async function fetchSources(a, { cacheDir = join(ROOT, 'sources'), fetchI
   } catch (e) {
     rmSync(dir, { recursive: true, force: true }); // never leave a partial dir that looks cached
     throw e;
+  } finally {
+    rmSync(jar, { force: true }); // cache holds extracted dirs only
   }
   return dir;
 }
