@@ -9,7 +9,7 @@ import { parseLb, parseManifestBsn, workspaceBundles, gogo } from '../skills/lif
 
 const fixture = readFileSync(new URL('./fixtures/lb-s.txt', import.meta.url), 'utf8');
 
-test('parseLb reads rows, skips header and prompt', () => {
+test('parseLb reads real rows incl. fragments and the not-Active module', () => {
   const rows = parseLb(fixture);
   assert.equal(rows.length, 19);
   assert.deepEqual(rows[1], { id: 3, state: 'Active', level: 6, name: 'com.liferay.osgi.util' });

@@ -38,7 +38,7 @@ Example: for `portal-7.4-ga106`, `MVCPortlet` lives in `com.liferay.portal.kerne
 ## Limits
 
 - Only a Gradle workspace on Portal CE 7.4 GA106 on Windows was exercised end to end. DXP (license and activation screens), Maven, macOS and Linux are untested; Liferay 7.4+ only.
-- Match the JDK to the product: GA106 did not start on JDK 21 and needs JDK 11 (or 8).
+- Match the JDK to the product. `lfr diagnose` reports DXP 2024.Q2+ and Portal CE 7.4 GA120+ as certified on JDK 17 and 21 (see https://www.liferay.com/compatibility-matrix); use JDK 11 for 7.4 releases before GA120 (verified with GA106, which does not start on JDK 21).
 - `lfr status` / `lfr stop` are not available on Windows (notice, exit 0); use an HTTP probe and `shutdown.bat`.
 - Details and the full "not verified" list: `docs/e2e-2026-11-22.md`.
 

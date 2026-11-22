@@ -127,7 +127,7 @@ Each SKILL.md: frontmatter `name` + `description` (third person, says *when* to 
 - Modify: `test/fixtures/lb-s.txt` (real capture, trimmed to ~20 rows incl. the broken module)
 
 - [ ] **Step 1:** `cd C:\wt; lfr create workspace lr-sample` (Gradle, portal 7.4); set `liferay.workspace.product=portal-7.4-ga106` (bundle cached in `~/.liferay/bundles`). Add `lfr create mvc-portlet hello-portlet` and an `api` module `broken-api` whose `bnd.bnd` adds `Import-Package: com.example.missing,*`.
-- [ ] **Step 2:** Install the plugin locally: `claude plugin marketplace add C:\Users\vinic\Documents\projects\liferay-claude-skills` then `claude plugin install liferay-claude-skills@liferay-claude-skills`. Confirm listed.
+- [ ] **Step 2:** Install the plugin locally: `claude plugin marketplace add <repo path>` then `claude plugin install liferay-claude-skills@liferay-claude-skills`. Confirm listed.
 - [ ] **Step 3:** Run each skill through Claude Code in `C:\wt\lr-sample` (headless `claude -p` is fine): config-check (expect info HSQL + any warns), workspace-setup (expect hello-portlet Active, broken-api not Active with `diag` naming `com.example.missing`), source-lookup ("where is `MVCPortlet` defined and what does `doView` do?" → path inside a fetched sources jar for the GA106 platform). Record outputs in `docs/e2e-2026-11-22.md`. If Gogo is unreachable on GA106, record that and the property fix — do not fake it.
 - [ ] **Step 4:** Replace `lb-s.txt` with the real capture; `npm test` still passes.
 - [ ] **Step 5:** Stop the portal (`lfr stop`).
