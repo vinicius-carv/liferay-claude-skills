@@ -12,11 +12,11 @@ Claude Code plugin with three skills for Liferay DXP / Portal Gradle workspaces:
 ## Install
 
 ```
-claude plugin marketplace add <owner/repo, or a local path with forward slashes: C:/path/to/repo>
+claude plugin marketplace add vinicius-carv/liferay-claude-skills
 claude plugin install liferay-claude-skills@liferay-claude-skills
 ```
 
-Git Bash rejects backslashes in the local path. Skills are invoked automatically when your request matches, or by name: `/liferay-workspace-setup`, `/liferay-config-check`, `/liferay-source-lookup`.
+From a local clone, pass its path instead (forward slashes on Windows: Git Bash rejects backslashes). Skills are invoked automatically when your request matches, or by name: `/liferay-workspace-setup`, `/liferay-config-check`, `/liferay-source-lookup`.
 
 ## Skills
 
