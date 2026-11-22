@@ -1,6 +1,7 @@
 {
   "name": "liferay-claude-skills",
   "owner": { "name": "vinicius-carv" },
+  "description": "Claude Code skills for Liferay DXP/Portal workspaces",
   "plugins": [
     { "name": "liferay-claude-skills", "source": "./", "description": "Claude Code skills for Liferay DXP/Portal workspaces: setup with verified bundle health, config checks, version-exact source lookup" }
   ]
