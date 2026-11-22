@@ -22,7 +22,7 @@ An unreachable DB port may just mean the database is not started yet; say so rat
 Use when `configs/local/portal-ext.properties` is missing and the user wants one.
 
 1. Ask: database type (MySQL, PostgreSQL, or HSQL/embedded), host, port, database name, user.
-2. **Never ask for the DB password in chat.** Tell the user to put it in `gradle-local.properties` or `configs/local/portal-ext.properties` themselves, or to supply it through an environment variable. Leave the placeholder below.
+2. **Never ask for the DB password in chat.** Tell the user to put it in `gradle-local.properties` or `configs/local/portal-ext.properties` themselves, or to supply it through an environment variable. Leave `jdbc.default.password=` empty in the template.
 3. Show the proposed file and wait for explicit confirmation. Only then write `<workspace>/configs/local/portal-ext.properties` (create the folder if needed). Never overwrite an existing file without showing a diff and getting a yes.
 4. Re-run the checker on the result.
 
@@ -37,13 +37,15 @@ browser.launcher.url=
 jdbc.default.driverClassName=com.mysql.cj.jdbc.Driver
 jdbc.default.url=jdbc:mysql://<host>:<port>/<db>?characterEncoding=UTF-8&dontTrackOpenResources=true&holdResultsOpenOverStatementClose=true&serverTimezone=GMT&useFastDateParsing=false&useUnicode=true
 jdbc.default.username=<user>
-jdbc.default.password=<set by the user, not in chat>
+# set the password yourself here or in gradle-local.properties
+jdbc.default.password=
 
 # PostgreSQL (use instead of the MySQL block)
 # jdbc.default.driverClassName=org.postgresql.Driver
 # jdbc.default.url=jdbc:postgresql://<host>:<port>/<db>
 # jdbc.default.username=<user>
-# jdbc.default.password=<set by the user, not in chat>
+# set the password yourself here or in gradle-local.properties
+# jdbc.default.password=
 ```
 
 The database itself must already exist (UTF-8) and the JDBC driver must be available to the bundle; the checker creates neither.
