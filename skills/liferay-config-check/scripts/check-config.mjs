@@ -11,15 +11,19 @@ const ARRAY = new RegExp(`^[TILFDXSCBilfdxscb]?\\[\\s*(?:${STR}(?:\\s*,\\s*${STR
 export function parseConfigFile(text) {
   const values = {};
   const errors = [];
-  text.split(/\r\n|\r|\n/).forEach((raw, i) => {
-    const line = raw.trim();
-    if (line === '' || line[0] === '#') return;
+  const lines = text.split(/\r\n|\r|\n/);
+  for (let i = 0; i < lines.length; i++) {
+    const start = i;
+    let line = lines[i].trim();
+    if (line === '' || line[0] === '#') continue;
+    // Join trailing-backslash continuations; the entry reports its first line.
+    while (line.endsWith('\\') && i + 1 < lines.length) line = line.slice(0, -1).trimEnd() + ' ' + lines[++i].trim();
     const m = /^([^=\s]+)\s*=\s*(.*)$/.exec(line);
-    if (!m) return errors.push({ line: i + 1, message: 'expected key=value' });
+    if (!m) { errors.push({ line: start + 1, message: 'expected key=value' }); continue; }
     const v = m[2];
     if (SCALAR.test(v) || ARRAY.test(v)) values[m[1]] = v;
-    else errors.push({ line: i + 1, message: `value must be quoted: ${m[1]}` });
-  });
+    else errors.push({ line: start + 1, message: `value must be quoted: ${m[1]}` });
+  }
   return { values, errors };
 }
 
@@ -78,7 +82,7 @@ export async function checkWorkspace(dir, { env, probe = defaultProbe } = {}) {
 
   const url = effective.get('jdbc.default.url');
   if (!url) {
-    add('info', 'configs', 'no jdbc.default.url: embedded HSQL — fine for dev, not for shared data');
+    add('info', 'configs', 'no jdbc.default.url: embedded HSQL - fine for dev, not for shared data');
   } else {
     const m = /^jdbc:(\w+):.*?\/\/([^:/;?]+)(?::(\d+))?/.exec(url);
     const port = m && (m[3] ? Number(m[3]) : DEFAULT_PORTS[m[1]]);

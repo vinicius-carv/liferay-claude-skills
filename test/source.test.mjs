@@ -79,3 +79,21 @@ test('fetchSources removes the jar after extraction, also on failure', async () 
   await assert.rejects(fetchSources(bad, { cacheDir, fetchImpl, extract: () => { throw new Error('boom'); } }), /boom/);
   assert.ok(!existsSync(join(cacheDir, 'com.liferay.journal.service-9.9.9-sources.jar')));
 });
+
+test('resolve returns bom url; workspace without version info errors clearly', async () => {
+  const { spawnSync } = await import('node:child_process');
+  const { mkdtempSync, writeFileSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const script = new URL('../skills/liferay-source-lookup/scripts/source.mjs', import.meta.url).pathname.replace(/^\/(\w:)/, '$1');
+  const mk = (props) => {
+    const d = mkdtempSync(join(tmpdir(), 'ws-'));
+    writeFileSync(join(d, 'settings.gradle'), 'apply plugin: "com.liferay.workspace"\n');
+    writeFileSync(join(d, 'gradle.properties'), props);
+    return d;
+  };
+  const ok = spawnSync('node', [script, 'resolve', mk('liferay.workspace.product=dxp-2025.q1.23-lts\nliferay.workspace.target.platform.version=2025.q1.23\n')], { encoding: 'utf8' });
+  assert.equal(JSON.parse(ok.stdout).bom, bomUrl('dxp', '2025.q1.23'));
+  const bad = spawnSync('node', [script, 'resolve', mk('# nothing\n')], { encoding: 'utf8' });
+  assert.match(bad.stderr, /workspace has no liferay\.workspace\.product or liferay\.workspace\.target\.platform\.version; pass --tpv and --product/);
+});

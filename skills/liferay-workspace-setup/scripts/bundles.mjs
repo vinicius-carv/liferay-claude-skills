@@ -114,7 +114,7 @@ async function main() {
   }
   const conn = { host: opt('--host', 'localhost'), port: +opt('--port', 11311) };
   const unreachable = (e) => {
-    console.error(`${e.message}\nEnable the Gogo console via module.framework.properties.osgi.console=localhost:11311 in portal-ext.properties (or gradle-local.properties).`);
+    console.error(`${e.message}\nEnable the Gogo console via module.framework.properties.osgi.console=localhost:11311 in configs/local/portal-ext.properties (copy it into the bundle, e.g. via initBundle, then restart).`);
     process.exit(2);
   };
   let lb;

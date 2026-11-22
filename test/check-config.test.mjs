@@ -57,3 +57,9 @@ test('dotfiles and subdirectories in osgi/configs are ignored', async () => {
     rmSync(d, { recursive: true, force: true });
   }
 });
+
+test('parseConfigFile accepts backslash-continued multi-line arrays', () => {
+  const r = parseConfigFile(['a=[ \\', '  "x", \\', '  "y" \\', ']', 'b=oops'].join('\n'));
+  assert.deepEqual(r.errors, [{ line: 5, message: 'value must be quoted: b' }]);
+  assert.ok('a' in r.values);
+});

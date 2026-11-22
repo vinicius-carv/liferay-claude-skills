@@ -71,6 +71,7 @@ async function resolveTarget(target) {
   if (existsSync(target)) {
     const ws = readWorkspace(target);
     if (!ws.isWorkspace) throw new Error(`not a Liferay workspace: ${target}`);
+    if (!ws.product && !ws.targetPlatformVersion) throw new Error('workspace has no liferay.workspace.product or liferay.workspace.target.platform.version; pass --tpv and --product');
     // Workspace tpv wins over releases.json.
     const product = (ws.product ?? '').split('-')[0];
     if (ws.targetPlatformVersion) return { product: product || 'dxp', releaseKey: ws.product, targetPlatformVersion: ws.targetPlatformVersion };
@@ -94,7 +95,10 @@ async function bomFor({ ws, tpv, product }) {
 async function main() {
   const [cmd, ...rest] = process.argv.slice(2);
   const { pos, opt } = parseArgs(rest);
-  if (cmd === 'resolve') console.log(JSON.stringify(await resolveTarget(pos[0] ?? process.cwd())));
+  if (cmd === 'resolve') {
+    const r = await resolveTarget(pos[0] ?? process.cwd());
+    console.log(JSON.stringify({ ...r, bom: bomUrl(r.product, r.targetPlatformVersion) }));
+  }
   else if (cmd === 'search' && pos[0]) {
     const kw = pos[0].toLowerCase();
     for (const a of (await bomFor(opt)).filter((a) => a.artifactId.toLowerCase().includes(kw))) console.log(`${a.groupId}:${a.artifactId}:${a.version}`);
