@@ -11,9 +11,9 @@ const fixture = readFileSync(new URL('./fixtures/lb-s.txt', import.meta.url), 'u
 
 test('parseLb reads rows, skips header and prompt', () => {
   const rows = parseLb(fixture);
-  assert.equal(rows.length, 3);
-  assert.deepEqual(rows[1], { id: 511, state: 'Active', level: 15, name: 'com.acme.good.api' });
-  assert.deepEqual(rows[2], { id: 1234, state: 'Installed', level: 15, name: 'com.acme.broken.api' });
+  assert.equal(rows.length, 19);
+  assert.deepEqual(rows[1], { id: 3, state: 'Active', level: 6, name: 'com.liferay.osgi.util' });
+  assert.deepEqual(rows[17], { id: 1624, state: 'Installed', level: 10, name: 'org.acme.broken.api' });
 });
 
 test('parseManifestBsn unwraps continuation and strips directives (CRLF)', () => {
@@ -52,7 +52,7 @@ test('gogo sends commands, disconnects, never exits', async () => {
   await new Promise((r) => server.listen(0, '127.0.0.1', r));
   const out = await gogo(['lb -s'], { host: '127.0.0.1', port: server.address().port });
   server.close();
-  assert.equal(parseLb(out[0]).length, 3);
+  assert.equal(parseLb(out[0]).length, 19);
   assert.ok(received.includes('disconnect'));
   assert.ok(!received.includes('exit'));
 });
@@ -103,4 +103,42 @@ test('workspaceBundles: jar without manifest does not reuse previous name; skips
 test('gogo refuses dangerous commands before connecting', async () => {
   for (const c of ['felix:stop 5', 'system:exit', 'EXIT', 'exit', 'shutdown 0', 'stop 5', 'uninstall 5', 'update 5'])
     await assert.rejects(gogo([c], { port: 1 }), /refus/i);
+});
+
+test('workspaceBundles accepts a relative workspace dir', () => {
+  const dir = mkdtempSync(join(tmpdir(), 'bundles-rel-'));
+  const libs = join(dir, 'modules', 'a', 'build', 'libs');
+  mkdirSync(libs, { recursive: true });
+  writeFileSync(join(dir, 'MANIFEST.MF'), 'Manifest-Version: 1.0\r\nBundle-SymbolicName: com.acme.rel\r\n\r\n');
+  const jar = process.env.JAVA_HOME ? join(process.env.JAVA_HOME, 'bin', 'jar') : 'jar';
+  execFileSync(jar, ['cfm', join(libs, 'a.jar'), join(dir, 'MANIFEST.MF')], { cwd: dir });
+  const prev = process.cwd();
+  process.chdir(dir);
+  try { assert.deepEqual(workspaceBundles('.').names, ['com.acme.rel']); } finally { process.chdir(prev); }
+});
+
+test('parseLb handles "name (version)|version" rows from a real Gogo', () => {
+  const rows = parseLb('    3|Active     |    6|com.liferay.osgi.util (8.1.0)|8.1.0\r\n');
+  assert.deepEqual(rows, [{ id: 3, state: 'Active', level: 6, name: 'com.liferay.osgi.util' }]);
+});
+
+test('gogo answers telnet TTYPE negotiation before the prompt appears (real Felix Gogo)', async () => {
+  const server = net.createServer((s) => {
+    s.write(Buffer.from([0xff, 0xfb, 0x01, 0xff, 0xfb, 0x03, 0xff, 0xfd, 0x1f, 0xff, 0xfd, 0x18]));
+    let sent = false, buf = Buffer.alloc(0);
+    s.on('data', (d) => {
+      buf = Buffer.concat([buf, d]);
+      if (!sent && buf.includes(Buffer.from([0xff, 0xfb, 0x18]))) { // client WILL TTYPE -> ask for it
+        sent = true; s.write(Buffer.from([0xff, 0xfa, 0x18, 0x01, 0xff, 0xf0]));
+      } else if (sent && buf.includes(Buffer.from([0xff, 0xf0])) && !buf.includes('Welcome')) {
+        buf = Buffer.from('Welcome'); s.write('Welcome\r\ng! ');
+      }
+      if (buf.includes('disconnect')) s.end();
+      if (buf.includes('lb -s\r\n')) { buf = Buffer.alloc(0); s.write('1|Active|0|a.b (1.0)|1.0\r\ng! '); }
+    });
+  });
+  await new Promise((r) => server.listen(0, '127.0.0.1', r));
+  const out = await gogo(['lb -s'], { host: '127.0.0.1', port: server.address().port, timeoutMs: 3000 });
+  server.close();
+  assert.equal(parseLb(out[0])[0].name, 'a.b');
 });

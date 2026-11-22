@@ -3,13 +3,13 @@ import net from 'node:net';
 import { execFileSync } from 'node:child_process';
 import { existsSync, mkdtempSync, readdirSync, readFileSync, rmSync } from 'node:fs';
 import { tmpdir } from 'node:os';
-import { join } from 'node:path';
+import { join, resolve } from 'node:path';
 import { pathToFileURL } from 'node:url';
 
 export function parseLb(text) {
   const rows = [];
   for (const line of text.split(/\r?\n/)) {
-    const m = /^\s*(\d+)\|\s*(\w+)\s*\|\s*(\d+)\|\s*(.+?)\s*(?:\(.*\))?\s*$/.exec(line);
+    const m = /^\s*(\d+)\|\s*(\w+)\s*\|\s*(\d+)\|\s*(.+?)\s*(?:\([^)|]*\))?\s*(?:\|.*)?$/.exec(line);
     if (m) rows.push({ id: +m[1], state: m[2], level: +m[3], name: m[4] });
   }
   return rows;
@@ -38,7 +38,7 @@ export function workspaceBundles(dir) {
   for (const jar of findJars(join(dir, 'modules'))) {
     const tmp = mkdtempSync(join(tmpdir(), 'bsn-')); // fresh dir per jar: no stale manifest
     try {
-      execFileSync(jarBin(), ['xf', jar, 'META-INF/MANIFEST.MF'], { cwd: tmp });
+      execFileSync(jarBin(), ['xf', resolve(jar), 'META-INF/MANIFEST.MF'], { cwd: tmp });
       const mf = join(tmp, 'META-INF', 'MANIFEST.MF');
       if (!existsSync(mf)) continue;
       const text = readFileSync(mf, 'utf8');
@@ -53,8 +53,27 @@ export function workspaceBundles(dir) {
 }
 
 const PROMPT = 'g! ';
-// shortcut: IAC options are dropped as 0xFF + 2 bytes (no subnegotiation), fine for Gogo's telnet handshake.
-const stripIac = (b) => { const o = []; for (let i = 0; i < b.length; i++) { if (b[i] === 0xff) i += 2; else o.push(b[i]); } return Buffer.from(o).toString('utf8'); };
+// Telnet: drop IAC commands (IAC cmd opt) and subnegotiations (IAC SB ... IAC SE); keep the rest as text.
+const stripIac = (b) => {
+  const o = [];
+  for (let i = 0; i < b.length; i++) {
+    if (b[i] !== 0xff) { o.push(b[i]); continue; }
+    if (b[i + 1] === 0xfa) { i += 2; while (i < b.length && !(b[i] === 0xff && b[i + 1] === 0xf0)) i++; i++; } // SB ... IAC SE
+    else i += 2;
+  }
+  return Buffer.from(o).toString('utf8');
+};
+// Felix Gogo's telnet server prints no prompt until the client answers its TTYPE/NAWS requests.
+const negotiate = (b) => {
+  const out = [];
+  for (let i = 0; i + 2 < b.length; i++) {
+    if (b[i] !== 0xff) continue;
+    if (b[i + 1] === 0xfd && b[i + 2] === 0x18) out.push(0xff, 0xfb, 0x18); // DO TTYPE -> WILL TTYPE
+    else if (b[i + 1] === 0xfd && b[i + 2] === 0x1f) out.push(0xff, 0xfb, 0x1f, 0xff, 0xfa, 0x1f, 0, 200, 0, 50, 0xff, 0xf0); // DO NAWS -> WILL NAWS + 200x50
+    else if (b[i + 1] === 0xfa && b[i + 2] === 0x18) out.push(0xff, 0xfa, 0x18, 0, ...Buffer.from('xterm'), 0xff, 0xf0); // SB TTYPE SEND -> IS xterm
+  }
+  return Buffer.from(out);
+};
 
 const FORBIDDEN = new Set(['exit', 'shutdown', 'stop', 'uninstall', 'update']);
 
@@ -71,6 +90,8 @@ export function gogo(commands, { host = 'localhost', port = 11311, timeoutMs = 1
     sock.on('close', () => (stage >= commands.length ? resolve(outputs) : fail(new Error('connection closed early')))); // resolve on close so disconnect is flushed
     sock.on('data', (d) => {
       raw = Buffer.concat([raw, d]);
+      const reply = negotiate(d);
+      if (reply.length) sock.write(reply);
       const text = stripIac(raw);
       if (!text.endsWith(PROMPT)) return;
       raw = Buffer.alloc(0);
