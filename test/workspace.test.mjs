@@ -25,3 +25,14 @@ test('readWorkspace: local override and defaults', () => {
   assert.equal(g.isWorkspace, true);
   assert.equal(readWorkspace('test/fixtures').isWorkspace, false);
 });
+
+test('parseProperties unescapes keys and values', () => {
+  const b = String.fromCharCode(92);
+  const text = [
+    `jdbc.default.url=jdbc${b}:mysql${b}://db${b}:3306/x`,
+    `k${b}=ey=a${b}${b}b${b}tc${b}u0041`,
+  ].join('\n');
+  const r = parseProperties(text);
+  assert.equal(r.entries.get('jdbc.default.url'), 'jdbc:mysql://db:3306/x');
+  assert.equal(r.entries.get('k=ey'), `a${b}b\tcA`);
+});

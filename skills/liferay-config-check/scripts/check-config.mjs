@@ -24,7 +24,7 @@ export function parseConfigFile(text) {
 }
 
 export function checkConfigFileName(name) {
-  if (/^[\w.$]+\.cfg$/.test(name)) return { kind: 'cfg', pid: name.slice(0, -4) };
+  if (/\.cfg$/.test(name)) return { kind: 'cfg', pid: name.slice(0, -4) };
   const m = /^([\w.$~-]+)\.config$/.exec(name);
   if (!m) return { kind: 'invalid' };
   const base = m[1];
@@ -93,7 +93,9 @@ export async function checkWorkspace(dir, { env, probe = defaultProbe } = {}) {
   for (const sub of existsSync(configsDir) ? readdirSync(configsDir) : []) {
     const osgi = join(configsDir, sub, 'osgi', 'configs');
     if (!existsSync(osgi)) continue;
-    for (const name of readdirSync(osgi)) {
+    for (const ent of readdirSync(osgi, { withFileTypes: true })) {
+      if (!ent.isFile() || ent.name.startsWith('.')) continue;
+      const name = ent.name;
       const f = join(osgi, name);
       const { kind } = checkConfigFileName(name);
       if (kind === 'invalid') add('error', rel(f), 'invalid configuration file name');

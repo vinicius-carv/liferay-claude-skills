@@ -35,3 +35,25 @@ test('ws-broken findings', async () => {
   assert.ok(has('error', /unreachable/i));
   assert.ok(has('warn', /duplicate/i));
 });
+
+test('factory-style .cfg names are cfg, not invalid', () => {
+  assert.equal(checkConfigFileName('com.liferay.Foo~bar.cfg').kind, 'cfg');
+  assert.equal(checkConfigFileName('pid-name.cfg').kind, 'cfg');
+});
+
+test('dotfiles and subdirectories in osgi/configs are ignored', async () => {
+  const { mkdtempSync, mkdirSync, writeFileSync, cpSync, rmSync } = await import('node:fs');
+  const { tmpdir } = await import('node:os');
+  const { join } = await import('node:path');
+  const d = mkdtempSync(join(tmpdir(), 'lcc-'));
+  try {
+    cpSync('test/fixtures/ws-good', d, { recursive: true });
+    const cfg = join(d, 'configs', 'local', 'osgi', 'configs');
+    writeFileSync(join(cfg, '.gitkeep'), '');
+    mkdirSync(join(cfg, 'sub'));
+    const f = await checkWorkspace(d, { probe: async () => true });
+    assert.deepEqual(f.filter((x) => x.severity === 'error'), []);
+  } finally {
+    rmSync(d, { recursive: true, force: true });
+  }
+});
