@@ -22,7 +22,7 @@ An unreachable DB port may just mean the database is not started yet; say so rat
 Use when `configs/local/portal-ext.properties` is missing and the user wants one.
 
 1. Ask: database type (MySQL, PostgreSQL, or HSQL/embedded), host, port, database name, user.
-2. **Never ask for the DB password in chat.** Tell the user to put it in `configs/local/portal-ext.properties` themselves (keep secrets out of git: use a git-ignored file or an environment variable). `gradle-local.properties` is NOT merged into `portal-ext.properties`. After editing `configs/`, the files must reach the bundle (`initBundle`/deploy copies them, or copy `configs/<env>/portal-ext.properties` to `bundles/`) before a restart picks them up. Leave `jdbc.default.password=` empty in the template.
+2. **Never ask for the DB password in chat.** Tell the user to put it in `configs/local/portal-ext.properties` themselves (keep secrets out of git: use a git-ignored file or an environment variable). `gradle-local.properties` is NOT merged into `portal-ext.properties`. After editing `configs/`, the files must reach the bundle (`initBundle` copies them; deploy does not, so otherwise copy `configs/<env>/portal-ext.properties` to `bundles/`) before a restart picks them up. Leave `jdbc.default.password=` empty in the template.
 3. Show the proposed file and wait for explicit confirmation. Only then write `<workspace>/configs/local/portal-ext.properties` (create the folder if needed). Never overwrite an existing file without showing a diff and getting a yes.
 4. Re-run the checker on the result.
 
