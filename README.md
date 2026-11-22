@@ -12,11 +12,11 @@ Claude Code plugin with three skills for Liferay DXP / Portal Gradle workspaces:
 ## Install
 
 ```
-claude plugin marketplace add <local path or owner/repo of this repo>
+claude plugin marketplace add <owner/repo, or a local path with forward slashes: C:/path/to/repo>
 claude plugin install liferay-claude-skills@liferay-claude-skills
 ```
 
-On Windows use forward slashes in a local path. Skills are invoked automatically when your request matches, or by name: `/liferay-workspace-setup`, `/liferay-config-check`, `/liferay-source-lookup`.
+Git Bash rejects backslashes in the local path. Skills are invoked automatically when your request matches, or by name: `/liferay-workspace-setup`, `/liferay-config-check`, `/liferay-source-lookup`.
 
 ## Skills
 
@@ -39,7 +39,7 @@ Example: for `portal-7.4-ga106`, `MVCPortlet` lives in `com.liferay.portal.kerne
 
 - Only a Gradle workspace on Portal CE 7.4 GA106 on Windows was exercised end to end. DXP (license and activation screens), Maven, macOS and Linux are untested; Liferay 7.4+ only.
 - Match the JDK to the product: GA106 did not start on JDK 21 and needs JDK 11 (or 8).
-- `lfr status` / `lfr stop` do nothing on Windows.
+- `lfr status` / `lfr stop` are not available on Windows (notice, exit 0); use an HTTP probe and `shutdown.bat`.
 - Details and the full "not verified" list: `docs/e2e-2026-11-22.md`.
 
 ## Development
